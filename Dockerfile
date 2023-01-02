@@ -1,8 +1,6 @@
-FROM centos:latest
-RUN cd /etc/yum.repos.d/
-RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-RUN sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-Run yum install httpd -y
-COPY index.html /var/www/html/
-CMD ["usr/sbin/httpd","-D","FOREGROUND"]
-EXPOSE 80
+FROM nginx
+RUN rm /etc/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY content /usr/share/nginx/html
+COPY conf /etc/nginx
+VOLUME /usr/share/nginx/html
+VOLUME /etc/nginx
