@@ -1,30 +1,17 @@
-#
-# Nginx Dockerfile
-#
-# https://github.com/dockerfile/nginx
-#
+# https://hub.docker.com/_/microsoft-dotnet
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+WORKDIR /source
 
-# Pull base image.
-FROM ubuntu
+# copy csproj and restore as distinct layers
+COPY aspnetapp/*.csproj .
+RUN dotnet restore --use-current-runtime  
 
-# Install Nginx.
-RUN \
-  add-apt-repository -y ppa:nginx/stable && \
-  apt-get update && \
-  apt-get install -y nginx && \
-  rm -rf /var/lib/apt/lists/* && \
-  echo "\ndaemon off;" >> /etc/nginx/nginx.conf && \
-  chown -R www-data:www-data /var/lib/nginx
+# copy everything else and build app
+COPY aspnetapp/. .
+RUN dotnet publish -c Release -o /app --use-current-runtime --self-contained false --no-restore
 
-# Define mountable directories.
-VOLUME ["/etc/nginx/sites-enabled", "/etc/nginx/certs", "/etc/nginx/conf.d", "/var/log/nginx", "/var/www/html"]
-
-# Define working directory.
-WORKDIR /etc/nginx
-
-# Define default command.
-CMD ["nginx"]
-
-# Expose ports.
-EXPOSE 80
-EXPOSE 443
+# final stage/image
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
+WORKDIR /app
+COPY --from=build /app .
+ENTRYPOINT ["dotnet", "aspnetapp.dll"]
